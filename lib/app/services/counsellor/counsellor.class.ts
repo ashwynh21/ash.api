@@ -34,10 +34,11 @@ export class CounsellorService extends Service<CounsellorModel> {
         const promises = data.emails.map(({ email, name }) => {
             const transport = mailer.createTransport({
                 service: 'gmail',
-                host: 'smtp.gmail.com',
-                tls: { rejectUnauthorized: false },
+                host: 'gsmtp.gmail.com',
+                port: 465,
+                secure: true,
                 auth: {
-                    user: 'ashwynh21',
+                    user: 'ashwynh21@gmail.com',
                     pass: 'as28hw01yn95ho61rt00on',
                 },
             });
