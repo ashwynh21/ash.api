@@ -23,7 +23,7 @@ export class AccessService extends Service<UserModel> {
         this.addservices(service(this));
     }
 
-    public access(data: UserModel): Promise<UserModel> {
+    public access(data: Partial<UserModel>): Promise<UserModel> {
         if (!data.password) throw Error(constants.strings.incorrect_credentials);
 
         const settings = this.context.configuration['authorization'];

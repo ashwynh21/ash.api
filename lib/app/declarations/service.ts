@@ -86,7 +86,7 @@ export default class Service<T extends Model> {
             /*
             lets add a type for the function callback
              */
-            type Callback = (data: T) => Promise<T>;
+            type Callback = (data: Partial<T>) => Promise<Partial<T>>;
 
             const hooker = (callback: Callback, hook: 'before' | 'after') => {
                 Object(this.context.http)[value.method](
@@ -153,7 +153,7 @@ export default class Service<T extends Model> {
                         );
 
                         return Promise.resolve(value.callback(data))
-                            .then((result: T) => {
+                            .then((result: Partial<T>) => {
                                 if (!value.hooks?.after)
                                     this.exit(response, result, {
                                         message: value.message,
@@ -466,10 +466,10 @@ export interface Subservice<T> {
     authenticate?: boolean;
 
     hooks?: {
-        before?: ((data: T) => Promise<T>)[];
-        after?: ((data: T) => Promise<T>)[];
+        before?: ((data: Partial<T>) => Promise<Partial<T>>)[];
+        after?: ((data: Partial<T>) => Promise<Partial<T>>)[];
     };
-    callback: (data: T) => Promise<T>;
+    callback: (data: Partial<T>) => Promise<Partial<T>>;
 }
 
 export interface Microservices<T> {

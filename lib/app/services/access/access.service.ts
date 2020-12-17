@@ -12,6 +12,6 @@ export default (access: AccessService): Microservices<UserModel> => ({
         With the authentication function defined and established we can now define functions that allow the requesting
         user to get access tokens as well as refresh tokens.
          */
-        callback: (data: UserModel) => access.access(data),
+        callback: (data) => access.access(data),
     },
 });
