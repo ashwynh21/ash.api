@@ -1,5 +1,5 @@
 export interface Return<T> {
     message?: string;
-    payload?: T | Array<T>;
+    payload?: Partial<T> | Array<Partial<T>>;
     debug?: string | Error;
 }

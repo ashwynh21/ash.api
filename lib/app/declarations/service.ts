@@ -312,7 +312,7 @@ export default class Service<T extends Model> {
      */
     private exit(
         response: Response,
-        value: T | Array<T>,
+        value: Partial<T> | Array<Partial<T>>,
         options: Return<T> & { status: number } = {
             message: 'Hey, request success!',
             status: 200,
