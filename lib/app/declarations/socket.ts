@@ -10,36 +10,8 @@ import io from 'socket.io';
 import Ash from './application';
 
 export default abstract class Socket implements SocketInterface {
-    /*
-    Let us make some more consideration with this class.
-
-    We need to create a good bridge between sockets that includes the considerations that we have made in the above
-    discussion. so what we are saying is that we need to establish the connection from the client in a way that the
-    server listens for events according to the number of users that are connected.
-
-    So for this to work I believe we need to work in an initializer function that will setup connections dynamically
-    as the user connects. This should work like a key lock system for us so that the user connects to the server
-    efficiently through some other channel.
-
-    To add more clarity we need to make sure we need to understand what it is that we are doing. So let us start by
-    considering the initializer function. since from this class we expect that the socket server is accessible and that
-    the HTTP server is up and running we need to have a base set of functions and events that will listen for connection
-    establishments. now when the connection is established the socket handler will need to run through a set of
-    functionalities for the client connection so that the server starts listening for certain messages along a certain
-    chain name on the message object.
-
-    So now, if a user connects, the socket on connect event should fire to configure all the callbacks for that
-    connection. this way we can have a dynamic set of message events that work with the application.
-     */
     public readonly name: string;
 
-    /*
-    Another consideration to make is that when a user connects that connection is represented by as socket, so then
-    if we bind or bootstrap the socket with the services needed then we should be able to add any functionality that is
-    required of us.
-
-    so now with the socket object in place we should be able to do a lot more.
-     */
     protected constructor(public client: Client, options: Options) {
         this.name = options.name;
 
@@ -50,6 +22,8 @@ export default abstract class Socket implements SocketInterface {
     The first hook that we will be adding is an on-create hook that will have the socket object in it.
      */
     protected abstract onready(): Promise<void>;
+
+    protected abstract ondestroy(): Promise<void>;
 
     /*
     Let us create a function that will allow us to easily emit events using the client object
@@ -113,6 +87,9 @@ export default abstract class Socket implements SocketInterface {
         after all the events are bound we are going to need a hook to represent that the service is ready. We will call
         it onready.
          */
+        this.client.on('disconnect', async () => {
+            await this.ondestroy();
+        });
     }
 }
 
@@ -168,4 +145,3 @@ export interface Client extends io.Socket {
      */
     meta: { token: string };
 }
-

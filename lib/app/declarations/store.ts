@@ -30,7 +30,7 @@ export default abstract class Store<T extends Model> {
     /*
      * so we are going to need a connection to the storage object
      * */
-    public storage: mongoose.Model<T>;
+    public storage!: mongoose.Model<T>;
     public context: Ash;
     public name: string;
     /*
@@ -42,16 +42,18 @@ export default abstract class Store<T extends Model> {
         this.context = app;
         this.name = options.name;
 
-        this.hooks(options.storage);
-        this.onmodel(options.storage);
+        if (options.storage) {
+            this.hooks(options.storage as Schema);
+            this.onmodel(options.storage as Schema);
 
-        this.storage = mongoose.model<T>(options.name, options.storage);
+            this.storage = mongoose.model<T>(options.name, options.storage);
+        }
 
         this.oninit();
         this.onready();
     }
 
-    public create(data: T): Promise<T> {
+    public create(data: Partial<T>): Promise<T> {
         return new this.storage(data).save().then((value) => {
             /*
              * We will have to intercept the activity from here, since we want to detect data changes and not HTTP
@@ -62,7 +64,7 @@ export default abstract class Store<T extends Model> {
     }
 
     public async read(
-        data: mongoose.MongooseFilterQuery<T> & {
+        data: mongoose.MongooseFilterQuery<Partial<T>> & {
             page?: number | string;
             size?: number | string;
             from?: string;
@@ -126,7 +128,7 @@ export default abstract class Store<T extends Model> {
         return this.storage.find(query as mongoose.FilterQuery<T>);
     }
 
-    public update(data: T): Promise<T> {
+    public update(data: Partial<T>): Promise<T> {
         return this.storage
             .updateOne({ _id: data._id }, ({
                 $set: data as Readonly<T>,
@@ -138,11 +140,11 @@ export default abstract class Store<T extends Model> {
             });
     }
 
-    public delete(data: T): Promise<T> {
-        return this.storage.findOneAndRemove({ _id: data._id }).then((value) => {
+    public delete(data: Partial<T>): Promise<T> {
+        return this.storage.findOneAndRemove({ _id: data._id }).then((value: unknown) => {
             if (!value) throw new Error(`Oops, could not remove ${this.name}`);
 
-            return data;
+            return data as T;
         });
     }
 
@@ -186,7 +188,7 @@ export default abstract class Store<T extends Model> {
 }
 
 interface Options {
-    storage: Schema;
+    storage?: Schema;
     name: string;
 }
 

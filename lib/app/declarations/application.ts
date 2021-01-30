@@ -1,10 +1,11 @@
 import { Express } from 'express';
 import { Model } from '../helpers/model';
+import { Mongoose } from 'mongoose';
+import { Server } from 'socket.io';
+
 import Service from './service';
 import Store from './store';
 
-import io from 'socket.io';
-import mongoose from 'mongoose';
 import multer from 'multer';
 import express from 'express';
 import cors from 'cors';
@@ -12,12 +13,12 @@ import helmet from 'helmet';
 import compress from 'compression';
 
 export default class Ash implements Application {
-    database!: mongoose.Mongoose;
+    database!: Mongoose;
     http!: Express;
-    io!: io.Server;
+    io!: Server;
 
-    private services: { [name: string]: <T extends Model>() => Service<T> } = {};
-    private stores: { [name: string]: <T extends Model>() => Store<T> } = {};
+    private services: { [name: string]: <M extends Model, T extends Service<M>>() => T } = {};
+    private stores: { [name: string]: <M extends Model, T extends Store<M>>() => T } = {};
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public configuration: { [name: string]: any } = {};
 
@@ -42,23 +43,23 @@ export default class Ash implements Application {
             .use(compress());
     }
 
-    public apply<T extends Model>(service: Service<T>): Service<T> {
-        this.services[service.name] = <T extends Model>() => (service as unknown) as Service<T>;
+    public apply<M extends Model, T extends Service<M> = Service<M>>(service: T): T {
+        this.services[service.name] = <M, T>() => (service as unknown) as T;
 
         return service;
     }
 
-    public commit<T extends Model>(store: Store<T>): Store<T> {
-        this.stores[store.name] = <T extends Model>() => (store as unknown) as Store<T>;
+    public commit<M extends Model, T extends Store<M> = Store<M>>(store: T): T {
+        this.stores[store.name] = <M, T>() => (store as unknown) as T;
         return store;
     }
 
-    public fetch<T extends Model>(service: string): Service<T> {
-        return this.services[service]();
+    public fetch<M extends Model, T extends Service<M> = Service<M>>(service: string): T {
+        return this.services[service]<M, T>();
     }
 
-    public query<T extends Model>(store: string): Store<T> {
-        return this.stores[store]();
+    public query<M extends Model, T extends Store<M> = Store<M>>(store: string): T {
+        return this.stores[store]<M, T>();
     }
 
     public configure(callback: (app: Ash) => void): Ash {
@@ -80,15 +81,38 @@ export default class Ash implements Application {
 interface Application {
     configure: (callback: (app: Ash) => void) => Ash;
 
-    fetch: <T extends Model>(service: string) => Service<T>;
-    apply: <T extends Model>(service: Service<T>) => Service<T>;
-
-    commit: <T extends Model>(store: Store<T>) => Store<T>;
-    query: <T extends Model>(store: string) => Store<T>;
-
     authenticate: (data: { token: string }) => Promise<Record<string, unknown>>;
 
-    io: io.Server;
+    io: Server;
     http: Express;
-    database: mongoose.Mongoose;
+    database: Mongoose;
 }
+
+class OrderFixture {
+    orderId: string;
+
+    constructor() {
+        this.orderId = 'foo';
+    }
+}
+
+class DecisionFixture {
+    decisionId: string;
+
+    constructor() {
+        this.decisionId = 'bar';
+    }
+}
+
+class FixtureStore {
+    order: () => OrderFixture = () => new OrderFixture();
+    decision: () => DecisionFixture = () => new DecisionFixture();
+}
+
+const fixtureStore = new FixtureStore();
+
+export function getFixture<K extends keyof FixtureStore, T extends ReturnType<FixtureStore[K]>>(entityName: K): T {
+    return fixtureStore[entityName]() as T;
+}
+
+getFixture<'order', OrderFixture>('order');

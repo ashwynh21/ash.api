@@ -153,7 +153,7 @@ export default class Service<T extends Model> {
                         );
 
                         return Promise.resolve(value.callback(data))
-                            .then((result: Partial<T>) => {
+                            .then((result: Partial<T> | unknown) => {
                                 if (!value.hooks?.after)
                                     this.exit(response, result, {
                                         message: value.message,
@@ -243,7 +243,7 @@ export default class Service<T extends Model> {
         this.context.http?.get(`/${this.name}`, (request: Request, response: Response) => {
             const data = spreader(request.body, (request.query as unknown) as Partial<T>);
             return storage
-                .read(data as mongoose.MongooseFilterQuery<T>)
+                .read(data as unknown as mongoose.MongooseFilterQuery<T>)
                 .then((value: T | Array<T> | { page: unknown; length: number }) =>
                     this.exit(response, value as Array<T>, {
                         message: 'Hi, a data payload is provided!',
@@ -312,8 +312,8 @@ export default class Service<T extends Model> {
      */
     private exit(
         response: Response,
-        value: Partial<T> | Array<Partial<T>>,
-        options: Return<T> & { status: number } = {
+        value: Partial<T> | Array<Partial<T>> | unknown,
+        options: Return<Partial<T>> & { status: number } = {
             message: 'Hey, request success!',
             status: 200,
         },
@@ -398,10 +398,10 @@ export default class Service<T extends Model> {
     We can shift the authentication code to its own function so its more reusable.
      */
     private authenticate(service: Subservice<T>, key: string) {
-        Object(this.context)[service.method](
+        Object(this.context.http)[service.method](
             `/${this.name}/${key}`,
             (request: Request, response: Response, next: (data?: unknown) => unknown) => {
-                const data: T & { token: string } = { ...request.body, ...request.query };
+                const data: Partial<T> & { token: string } = { ...request.body, ...request.query };
                 /*
                 This is where the authentication method will go.
                  */
@@ -469,7 +469,8 @@ export interface Subservice<T> {
         before?: ((data: Partial<T>) => Promise<Partial<T>>)[];
         after?: ((data: Partial<T>) => Promise<Partial<T>>)[];
     };
-    callback: (data: Partial<T>) => Promise<Partial<T>>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    callback: (data: Partial<T>) => any;
 }
 
 export interface Microservices<T> {

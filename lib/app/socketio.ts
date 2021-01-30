@@ -3,10 +3,11 @@ import { Client } from './declarations';
 
 import io from 'socket.io';
 import sockets from './sockets';
+import https from 'https';
 import http from 'http';
 import Socket from './declarations/socket';
 
-export default (app: Ash, server: http.Server): void => {
+export default (app: Ash, server: https.Server | http.Server): void => {
     app.io = io(server, { serveClient: false });
 
     /*
@@ -35,7 +36,7 @@ function bootstrap(app: Ash, socket: io.Socket): Client {
      */
     client.context = app;
     client.services = {};
-    client.meta = socket.handshake.query;
+    client.meta = socket.handshake.query as (Record<string, string> & { token: string });
 
     client.apply = <T extends Socket>(service: T) => {
         client.services[service.name] = service;

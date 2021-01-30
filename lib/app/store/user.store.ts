@@ -19,15 +19,12 @@ export class UserStore extends Store<UserModel> {
          * */
     }
 
-    protected onmodel(schema: mongoose.Schema<UserModel>): void {
-        /*
-         * //TODO: implement onmodel()
-         * */
-    }
-
     protected onready(): void {
         /*
          * //TODO: implement onready()
          * */
+    }
+
+    protected onmodel(schema: mongoose.Schema): void {
     }
 }
