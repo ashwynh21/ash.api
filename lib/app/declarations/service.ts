@@ -243,7 +243,7 @@ export default class Service<T extends Model> {
         this.context.http?.get(`/${this.name}`, (request: Request, response: Response) => {
             const data = spreader(request.body, (request.query as unknown) as Partial<T>);
             return storage
-                .read(data as unknown as mongoose.MongooseFilterQuery<T>)
+                .read((data as unknown) as mongoose.MongooseFilterQuery<T>)
                 .then((value: T | Array<T> | { page: unknown; length: number }) =>
                     this.exit(response, value as Array<T>, {
                         message: 'Hi, a data payload is provided!',

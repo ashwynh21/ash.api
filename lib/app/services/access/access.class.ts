@@ -28,36 +28,39 @@ export class AccessService extends Service<UserModel> {
 
         const settings = this.context.configuration['authorization'];
 
-        return this.context.fetch<UserModel, UserService>(settings.entity).authorize(data).then((value) => {
-            if (value) {
-                const result = (({ ...value } as unknown) as { _doc: UserModel & { token: string } })._doc;
+        return this.context
+            .fetch<UserModel, UserService>(settings.entity)
+            .authorize(data)
+            .then((value) => {
+                if (value) {
+                    const result = (({ ...value } as unknown) as { _doc: UserModel & { token: string } })._doc;
 
-                result.token = jwt.sign(
-                    {
-                        header: {
-                            alg: 'HS256',
-                            typ: 'JWT',
+                    result.token = jwt.sign(
+                        {
+                            header: {
+                                alg: 'HS256',
+                                typ: 'JWT',
+                            },
+                            payload: result,
+                            signature: {
+                                iss: 'info@' + this.context.configuration['host'],
+                                sub: 'info@' + this.context.configuration['host'],
+                                aud: this.context.configuration['host'],
+                                iat: Date.now(),
+                                exp: Date.now() + settings.expiration,
+                            },
                         },
-                        payload: result,
-                        signature: {
-                            iss: 'info@' + this.context.configuration['host'],
-                            sub: 'info@' + this.context.configuration['host'],
-                            aud: this.context.configuration['host'],
-                            iat: Date.now(),
-                            exp: Date.now() + settings.expiration,
+                        settings.secret,
+                        {
+                            algorithm: 'HS256',
+                            expiresIn: settings.expiration,
                         },
-                    },
-                    settings.secret,
-                    {
-                        algorithm: 'HS256',
-                        expiresIn: settings.expiration,
-                    },
-                );
+                    );
 
-                return result;
-            }
+                    return result;
+                }
 
-            throw Error(constants.strings.incorrect_credentials);
-        });
+                throw Error(constants.strings.incorrect_credentials);
+            });
     }
 }

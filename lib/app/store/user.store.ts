@@ -26,5 +26,6 @@ export class UserStore extends Store<UserModel> {
     }
 
     protected onmodel(schema: mongoose.Schema): void {
+        /**/
     }
 }

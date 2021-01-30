@@ -36,7 +36,7 @@ function bootstrap(app: Ash, socket: io.Socket): Client {
      */
     client.context = app;
     client.services = {};
-    client.meta = socket.handshake.query as (Record<string, string> & { token: string });
+    client.meta = socket.handshake.query as Record<string, string> & { token: string };
 
     client.apply = <T extends Socket>(service: T) => {
         client.services[service.name] = service;
