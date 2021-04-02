@@ -38,13 +38,13 @@ export default abstract class Store<T extends Model> {
      * */
     private cache: Cache<T> = { count: 0, data: {} };
 
-    protected constructor(app: Ash, options: Options) {
+    protected constructor(app: Ash, options: Options<T>) {
         this.context = app;
         this.name = options.name;
 
         if (options.storage) {
-            this.hooks(options.storage as Schema);
-            this.onmodel(options.storage as Schema);
+            this.hooks(options.storage);
+            this.onmodel(options.storage);
 
             this.storage = mongoose.model<T>(options.name, options.storage);
         }
@@ -120,12 +120,13 @@ export default abstract class Store<T extends Model> {
             return {
                 page: await this.storage
                     .find(query as mongoose.FilterQuery<T>)
+                    .sort({ _id: -1 })
                     .skip(data.page * data.size)
                     .limit(data.size),
                 length: Math.floor(await this.storage.countDocuments(query as mongoose.FilterQuery<T>)),
             };
         }
-        return this.storage.find(query as mongoose.FilterQuery<T>);
+        return this.storage.find(query as mongoose.FilterQuery<T>).sort({ _id: -1 });
     }
 
     public update(data: Partial<T>): Promise<T> {
@@ -133,19 +134,25 @@ export default abstract class Store<T extends Model> {
             .updateOne({ _id: data._id }, ({
                 $set: data as Readonly<T>,
             } as unknown) as UpdateQuery<T>)
-            .then((value: undefined | unknown) => {
+            .then((value: unknown) => {
                 if (!value) throw Error(`Oops, ${this.name} does not exist!`);
 
-                return data;
+                return data as T;
             });
     }
 
     public delete(data: Partial<T>): Promise<T> {
-        return this.storage.findOneAndRemove({ _id: data._id }).then((value: unknown) => {
-            if (!value) throw new Error(`Oops, could not remove ${this.name}`);
+        return this.storage
+            .deleteOne({ _id: data._id })
+            .then(
+                (
+                    value: { ok?: number | undefined; n?: number | undefined } & { deletedCount?: number | undefined },
+                ) => {
+                    if (!value) throw new Error(`Oops, could not remove ${this.name}`);
 
-            return data as T;
-        });
+                    return data as T;
+                },
+            );
     }
 
     /*
@@ -159,12 +166,12 @@ export default abstract class Store<T extends Model> {
     /*
     we now need to make hooks onto the storage object to be able to update the cache when something changes in the store
      */
-    protected abstract onmodel(schema: Schema): void;
+    protected abstract onmodel(schema: Schema<T>): void;
 
     /*
     let us now make a few more hooks that will update the
      */
-    private hooks(schema: Schema): void {
+    private hooks(schema: Schema<T>): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
 
@@ -187,8 +194,8 @@ export default abstract class Store<T extends Model> {
     }
 }
 
-interface Options {
-    storage?: Schema;
+interface Options<T extends Model> {
+    storage?: Schema<T>;
     name: string;
 }
 

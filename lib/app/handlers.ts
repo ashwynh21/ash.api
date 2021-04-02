@@ -5,7 +5,7 @@ import { Return } from './helpers/return';
 import constants from './constants';
 import Ash from './declarations/application';
 
-export = (app: Ash): void => {
+export default (app: Ash): void => {
     /*
     Here we will be configuring handlers that will override the default handlers that are being expressed
     in express. The first express app route that we will be overriding is the 404 error.

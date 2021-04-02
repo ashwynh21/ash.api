@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import Ash from './declarations/application';
 
-export = async (app: Ash): Promise<void> => {
+export default async (app: Ash): Promise<void> => {
     app.database = await mongoose
         .connect(`${app.configuration['mongodb']}${app.configuration['database']}`, {
             useCreateIndex: true,

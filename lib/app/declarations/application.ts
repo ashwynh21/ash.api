@@ -40,6 +40,9 @@ export default class Ash implements Application {
 			enable security, CORS, compression, favicon and body parsing
 			 */
             .use(helmet())
+            /*
+             * We have to exclude compression because we require the content-length header in the response
+             * */
             .use(compress());
     }
 
@@ -87,32 +90,3 @@ interface Application {
     http: Express;
     database: Mongoose;
 }
-
-class OrderFixture {
-    orderId: string;
-
-    constructor() {
-        this.orderId = 'foo';
-    }
-}
-
-class DecisionFixture {
-    decisionId: string;
-
-    constructor() {
-        this.decisionId = 'bar';
-    }
-}
-
-class FixtureStore {
-    order: () => OrderFixture = () => new OrderFixture();
-    decision: () => DecisionFixture = () => new DecisionFixture();
-}
-
-const fixtureStore = new FixtureStore();
-
-export function getFixture<K extends keyof FixtureStore, T extends ReturnType<FixtureStore[K]>>(entityName: K): T {
-    return fixtureStore[entityName]() as T;
-}
-
-getFixture<'order', OrderFixture>('order');
